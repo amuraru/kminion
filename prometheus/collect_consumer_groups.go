@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/twmb/franz-go/pkg/kerr"
+	"github.com/twmb/franz-go/pkg/kmsg"
 	"go.uber.org/zap"
 )
 
@@ -56,6 +57,46 @@ func (e *Exporter) collectConsumerGroups(ctx context.Context, ch chan<- promethe
 					prometheus.GaugeValue,
 					float64(len(group.Members)),
 					group.Group,
+				)
+			}
+
+			// iterate all members and build two maps:
+			// - {topic -> number-of-consumers}
+			// - {topic -> number-of-partitions-assigned}
+			topic_consumers := make(map[string]int)
+			topic_partitions_assigned := make(map[string]int)
+			for _, member := range group.Members {
+				var kassignment kmsg.GroupMemberAssignment
+				if err := kassignment.ReadFrom(member.MemberAssignment); err != nil {
+					e.logger.Warn("failed to decode consumer group member assignment, internal kafka error",
+						zap.Error(err),
+						zap.String("group_id", group.Group),
+					)
+				} else {
+					for _, topic := range kassignment.Topics {
+						topic_consumers[topic.Topic]++
+						topic_partitions_assigned[topic.Topic] += len(topic.Partitions)
+					}
+				}
+			}
+			// number of members in consumer groups for each topic
+			for topic_name, consumers := range topic_consumers {
+				ch <- prometheus.MustNewConstMetric(
+					e.consumerGroupTopicMembers,
+					prometheus.GaugeValue,
+					float64(consumers),
+					group.Group,
+					topic_name,
+				)
+			}
+			// number of partitions assigned in consumer groups for each topic
+			for topic_name, partitions := range topic_consumers {
+				ch <- prometheus.MustNewConstMetric(
+					e.consumerGroupTopicPartitions,
+					prometheus.GaugeValue,
+					float64(partitions),
+					group.Group,
+					topic_name,
 				)
 			}
 		}
