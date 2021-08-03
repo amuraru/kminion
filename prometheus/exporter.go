@@ -39,12 +39,15 @@ type Exporter struct {
 	partitionLowWaterMark  *prometheus.Desc
 
 	// Consumer Groups
-	consumerGroupInfo              *prometheus.Desc
-	consumerGroupMembers           *prometheus.Desc
-	consumerGroupTopicOffsetSum    *prometheus.Desc
-	consumerGroupTopicPartitionLag *prometheus.Desc
-	consumerGroupTopicLag          *prometheus.Desc
-	offsetCommits                  *prometheus.Desc
+	consumerGroupInfo                    *prometheus.Desc
+	consumerGroupMembers                 *prometheus.Desc
+	consumerGroupMembersEmpty            *prometheus.Desc
+	consumerGroupTopicMembers            *prometheus.Desc
+	consumerGroupAssignedTopicPartitions *prometheus.Desc
+	consumerGroupTopicOffsetSum          *prometheus.Desc
+	consumerGroupTopicPartitionLag       *prometheus.Desc
+	consumerGroupTopicLag                *prometheus.Desc
+	offsetCommits                        *prometheus.Desc
 }
 
 func NewExporter(cfg Config, logger *zap.Logger, minionSvc *minion.Service) (*Exporter, error) {
@@ -153,6 +156,27 @@ func (e *Exporter) InitializeMetrics() {
 		prometheus.BuildFQName(e.cfg.Namespace, "kafka", "consumer_group_members"),
 		"Consumer Group member count metrics. It will report the number of members in the consumer group",
 		[]string{"group_id"},
+		nil,
+	)
+	// Group Empty Memmbers
+	e.consumerGroupMembersEmpty = prometheus.NewDesc(
+		prometheus.BuildFQName(e.cfg.Namespace, "kafka", "consumer_group_empty_members"),
+		"It will report the number of members in the consumer group with no partition assigned",
+		[]string{"group_id"},
+		nil,
+	)
+	// Group Topic Members
+	e.consumerGroupTopicMembers = prometheus.NewDesc(
+		prometheus.BuildFQName(e.cfg.Namespace, "kafka", "consumer_group_topic_members"),
+		"It will report the number of members in the consumer group assigned on a given topic",
+		[]string{"group_id", "topic_name"},
+		nil,
+	)
+	// Group Topic Assigned Partitions
+	e.consumerGroupAssignedTopicPartitions = prometheus.NewDesc(
+		prometheus.BuildFQName(e.cfg.Namespace, "kafka", "consumer_group_topic_assigned_partitions"),
+		"It will report the number of partitions assigned in the consumer group for a given topic",
+		[]string{"group_id", "topic_name"},
 		nil,
 	)
 	// Topic / Partition Offset Sum (useful for calculating the consumed messages / sec on a topic)

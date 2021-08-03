@@ -75,6 +75,18 @@ kminion_kafka_consumer_group_info{coordinator_id="0",group_id="bigquery-sink",pr
 # TYPE kminion_kafka_consumer_group_members gauge
 kminion_kafka_consumer_group_members{group_id="bigquery-sink"} 2
 
+# HELP kminion_kafka_consumer_group_empty_members Consumer Group Empty Members. It will report the number of members in the consumer group with no partition assigned
+# TYPE kminion_kafka_consumer_group_empty_members gauge
+kminion_kafka_consumer_group_empty_members{group_id="bigquery-sink"} 1
+
+# HELP kminion_kafka_consumer_group_topic_members Consumer Group topic member count metrics. It will report the number of members in the consumer group assigned on a given topic
+# TYPE kminion_kafka_consumer_group_topic_members gauge
+kminion_kafka_consumer_group_topic_members{group_id="bigquery-sink",topic_name="shop-activity"} 4
+
+# HELP kminion_kafka_consumer_group_topic_assigned_partitions Consumer Group topic partitions count metrics. It will report the number of partitions assigned in the consumer group for a given topic
+# TYPE kminion_kafka_consumer_group_topic_assigned_partitions gauge
+kminion_kafka_consumer_group_topic_assigned_partitions{group_id="bigquery-sink",topic_name="shop-activity"} 32
+
 # HELP kminion_kafka_consumer_group_topic_offset_sum The sum of all committed group offsets across all partitions in a topic
 # TYPE kminion_kafka_consumer_group_topic_offset_sum gauge
 kminion_kafka_consumer_group_topic_offset_sum{group_id="bigquery-sink",topic_name="shop-activity"} 4.259513e+06
