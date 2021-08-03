@@ -2,10 +2,11 @@ package prometheus
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"go.uber.org/zap"
-	"strconv"
 )
 
 func (e *Exporter) collectConsumerGroups(ctx context.Context, ch chan<- prometheus.Metric) bool {
@@ -43,11 +44,17 @@ func (e *Exporter) collectConsumerGroups(ctx context.Context, ch chan<- promethe
 				prometheus.GaugeValue,
 				float64(state),
 				group.Group,
-				strconv.Itoa(len(group.Members)),
 				group.Protocol,
 				group.ProtocolType,
 				group.State,
 				strconv.FormatInt(int64(coordinator), 10),
+			)
+			// total number of members in consumer groups
+			ch <- prometheus.MustNewConstMetric(
+				e.consumerGroupMembers,
+				prometheus.GaugeValue,
+				float64(len(group.Members)),
+				group.Group,
 			)
 		}
 	}
