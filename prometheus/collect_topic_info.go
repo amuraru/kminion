@@ -47,14 +47,14 @@ func (e *Exporter) collectTopicInfo(ctx context.Context, ch chan<- prometheus.Me
 	}
 
 	for _, topic := range metadata.Topics {
-		if !e.minionSvc.IsTopicAllowed(topic.Topic) {
+		if !e.minionSvc.IsTopicAllowed(*topic.Topic) {
 			continue
 		}
 		typedErr := kerr.TypedErrorForCode(topic.ErrorCode)
 		if typedErr != nil {
 			isOk = false
 			e.logger.Warn("failed to get metadata of a specific topic",
-				zap.String("topic_name", topic.Topic),
+				zap.String("topic_name", *topic.Topic),
 				zap.Error(typedErr))
 			continue
 		}
@@ -66,11 +66,11 @@ func (e *Exporter) collectTopicInfo(ctx context.Context, ch chan<- prometheus.Me
 		}
 
 		var labelsValues []string
-		labelsValues = append(labelsValues, topic.Topic)
+		labelsValues = append(labelsValues, *topic.Topic)
 		labelsValues = append(labelsValues, strconv.Itoa(partitionCount))
 		labelsValues = append(labelsValues, strconv.Itoa(replicationFactor))
 		for _, key := range e.minionSvc.Cfg.Topics.InfoMetric.ConfigKeys {
-			labelsValues = append(labelsValues, getOrDefault(configsByTopic[topic.Topic], key, "N/A"))
+			labelsValues = append(labelsValues, getOrDefault(configsByTopic[*topic.Topic], key, "N/A"))
 		}
 		ch <- prometheus.MustNewConstMetric(
 			e.topicInfo,
@@ -82,31 +82,31 @@ func (e *Exporter) collectTopicInfo(ctx context.Context, ch chan<- prometheus.Me
 			e.topicInfoPartitionsCount,
 			prometheus.GaugeValue,
 			float64(partitionCount),
-			topic.Topic,
+			*topic.Topic,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			e.topicInfoReplicationFactor,
 			prometheus.GaugeValue,
 			float64(replicationFactor),
-			topic.Topic,
+			*topic.Topic,
 		)
-		if parameter, exists := configsByTopic[topic.Topic]["min.insync.replicas"]; exists {
+		if parameter, exists := configsByTopic[*topic.Topic]["min.insync.replicas"]; exists {
 			if value, err := strconv.ParseFloat(parameter, 64); err == nil {
 				ch <- prometheus.MustNewConstMetric(
 					e.topicInfoMinInsyncReplicas,
 					prometheus.GaugeValue,
 					value,
-					topic.Topic,
+					*topic.Topic,
 				)
 			}
 		}
-		if parameter, exists := configsByTopic[topic.Topic]["retention.ms"]; exists {
+		if parameter, exists := configsByTopic[*topic.Topic]["retention.ms"]; exists {
 			if value, err := strconv.ParseFloat(parameter, 64); err == nil {
 				ch <- prometheus.MustNewConstMetric(
 					e.topicInfoRetentionMs,
 					prometheus.GaugeValue,
 					value,
-					topic.Topic,
+					*topic.Topic,
 				)
 			}
 		}
